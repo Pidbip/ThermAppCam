@@ -57,8 +57,10 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     // Download calibrate data 25 deg C
     FILE *fp= fopen("0.bin", "rb");
-    fread(image_cal, 2, 384*288, fp);
-    fclose(fp);
+    if(fp != NULL){
+      fread(image_cal, 2, 384*288, fp);
+      fclose(fp);
+    }
 
     therm = thermapp_initUSB();
     if(therm == NULL) {
