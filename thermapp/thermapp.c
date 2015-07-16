@@ -255,56 +255,56 @@ void* thermapp_ThreadPipeRead(void* ctx){
     	enum thermapp_async_status current_status = THERMAPP_RUNNING;
 
     	puts("thermapp_ThreadPipeRead run\n");
-	 while(current_status == THERMAPP_RUNNING){
+	while(current_status == THERMAPP_RUNNING){
 
-        if (( len =read(thermapp->fd_pipe_rd, &FrameHeaderStart, sizeof(FrameHeaderStart))) <= 0 ) {
-            fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
-            perror("fifo pipe read");
-            break;
-	}
-
-        //fprintf(stderr,"thermapp_ThreadPipeRead(): thermapp->async_status =  %d\n",thermapp->async_status);
-
-        //Catch Start preamble FRAME_START_HEADER
-	if(FrameHeaderStart == FRAME_START_HEADER){
-		//fprintf(stderr,"FrameHeaderStart == FRAME_START_HEADER\n");
-	thermapp->is_NewFrame = FALSE;
-	pthread_mutex_lock(&thermapp->mutex_thermapp);
-        for(actual_length = 0; actual_length < (PACKET_SIZE);){
-                len = read(thermapp->fd_pipe_rd, (void*)(thermapp->therm_packet) + actual_length, (PACKET_SIZE) - actual_length);
-		if ( len <= 0 ) {
-                    fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
-                    perror("fifo pipe read");
-                    pthread_mutex_unlock(&thermapp->mutex_thermapp);
-                    break;
-		}
-        	actual_length += len;
-        	//fprintf(stderr,"len: %d, actual_length: %d\n",len, actual_length);
+		if (( len =read(thermapp->fd_pipe_rd, &FrameHeaderStart, sizeof(FrameHeaderStart))) <= 0 ) {
+			fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
+			perror("fifo pipe read");
+			break;
 		}
 
-        	// fprintf(stderr,"len: %d, actual_length: %d\n",len, actual_length);
-		//fprintf(stderr,"FRAME------------->");
-		if (read(thermapp->fd_pipe_rd, &FrameHeaderStop, sizeof(FrameHeaderStop)) <= 0 ) {
-                	fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
-                	perror("fifo pipe read");
-                	pthread_mutex_unlock(&thermapp->mutex_thermapp);
-                	break;
-		}
+        	//fprintf(stderr,"thermapp_ThreadPipeRead(): thermapp->async_status =  %d\n",thermapp->async_status);
 
-		//Catch Stop preamble FRAME_STOP_HEADER
-		// On FRAME_STOP_HEADER we can check the damaged packet
-		if(FrameHeaderStop == FRAME_STOP_HEADER){
-               		// fprintf(stderr,"FRAME_OK\n");
-			thermapp->is_NewFrame = TRUE;
-                	//pthread_cond_signal(&thermapp->cond_getimage);
-                	pthread_cond_wait(&thermapp->cond_pipe, &thermapp->mutex_thermapp);
-		}else{
-                	fprintf(stderr,"lost frame\n");
-                	thermapp->lost_packet++; //increment damaged frames counter
-		}
+        	//Catch Start preamble FRAME_START_HEADER
+		if(FrameHeaderStart == FRAME_START_HEADER){
+			//fprintf(stderr,"FrameHeaderStart == FRAME_START_HEADER\n");
+			thermapp->is_NewFrame = FALSE;
+			pthread_mutex_lock(&thermapp->mutex_thermapp);
+        		for(actual_length = 0; actual_length < (PACKET_SIZE);){
+                		len = read(thermapp->fd_pipe_rd, (void*)(thermapp->therm_packet) + actual_length, (PACKET_SIZE) - actual_length);
+				if ( len <= 0 ) {
+					fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
+					perror("fifo pipe read");
+					pthread_mutex_unlock(&thermapp->mutex_thermapp);
+					break;
+				}
+        		actual_length += len;
+        		//fprintf(stderr,"len: %d, actual_length: %d\n",len, actual_length);
+			}
 
-		current_status = thermapp->async_status;
-		pthread_mutex_unlock(&thermapp->mutex_thermapp);
+        		// fprintf(stderr,"len: %d, actual_length: %d\n",len, actual_length);
+			//fprintf(stderr,"FRAME------------->");
+			if (read(thermapp->fd_pipe_rd, &FrameHeaderStop, sizeof(FrameHeaderStop)) <= 0 ) {
+                		fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
+                		perror("fifo pipe read");
+                		pthread_mutex_unlock(&thermapp->mutex_thermapp);
+                		break;
+			}
+
+			//Catch Stop preamble FRAME_STOP_HEADER
+			// On FRAME_STOP_HEADER we can check the damaged packet
+			if(FrameHeaderStop == FRAME_STOP_HEADER){
+               			// fprintf(stderr,"FRAME_OK\n");
+				thermapp->is_NewFrame = TRUE;
+                		//pthread_cond_signal(&thermapp->cond_getimage);
+                		pthread_cond_wait(&thermapp->cond_pipe, &thermapp->mutex_thermapp);
+			}else{
+                		fprintf(stderr,"lost frame\n");
+                		thermapp->lost_packet++; //increment damaged frames counter
+			}
+
+			current_status = thermapp->async_status;
+			pthread_mutex_unlock(&thermapp->mutex_thermapp);
 		}
 	}
 
