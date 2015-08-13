@@ -69,7 +69,7 @@ ThermApp *thermapp_initUSB(void)
 
     //Initialize data struct
     // this init data was recieved from usbmonitor
-    thermapp->cfg->none_volatile_data0 = 0xa5a5a5a5;//I think it's preamble of cfg_packet
+    thermapp->cfg->none_volatile_data0 = 0xa5a5a5a5;//it's preamble of cfg_packet
     thermapp->cfg->none_volatile_data1 = 0xa5d5a5a5;
     thermapp->cfg->modes = 0x0002; //test pattern low
     thermapp->cfg->none_volatile_dbyte0 = 0x0000;//
@@ -165,7 +165,7 @@ int thermapp_USB_checkForDevice(ThermApp *thermapp, int vendor, int product)
 	}
 
 
-    // I don't know what is this but this is needed to make ThermApp work. I received it from usbmonitor
+    // We don't know what is this but this is needed to make ThermApp work. We received it from usbmonitor
     status = libusb_control_transfer(thermapp->dev, LIBUSB_ENDPOINT_IN, 0x06, 0x0100,0x0000,buffer, 0x12,0);
 	fprintf(stdout, "status: %d, ",status);
 
@@ -416,8 +416,8 @@ int thermapp_getId(ThermApp *thermapp){
 	return thermapp->id;
 }
 
-//I don't know offset and quant value for temperature.
-//I use experimental value.
+//We don't know offset and quant value for temperature.
+//We use experimental value.
 float thermapp_getTemperature(ThermApp *thermapp){
 	short t = thermapp->temperature;
     return (t - 14336) * 0.00652;
