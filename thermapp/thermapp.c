@@ -243,8 +243,8 @@ void* thermapp_ThreadReadAsync(void* ctx){
 void* thermapp_ThreadPipeRead(void* ctx){
 
 	ThermApp *thermapp = (ThermApp*)ctx;
-    	unsigned int len, FrameHeaderStart = 0, FrameHeaderStop = 0;
-    	int actual_length = 0;
+    unsigned int len, FrameHeaderStart = 0, FrameHeaderStop = 0;
+    int actual_length = 0;
 
     	// Open fifo pipe for read
 	if ( (thermapp->fd_pipe_rd = open(thermapp->pipe_name, O_RDONLY)) <= 0 ) {
@@ -252,9 +252,9 @@ void* thermapp_ThreadPipeRead(void* ctx){
 		return NULL;
 	}
 
-    	enum thermapp_async_status current_status = THERMAPP_RUNNING;
+    enum thermapp_async_status current_status = THERMAPP_RUNNING;
 
-    	puts("thermapp_ThreadPipeRead run\n");
+    puts("thermapp_ThreadPipeRead run\n");
 	while(current_status == THERMAPP_RUNNING){
 
 		if (( len =read(thermapp->fd_pipe_rd, &FrameHeaderStart, sizeof(FrameHeaderStart))) <= 0 ) {
@@ -271,36 +271,36 @@ void* thermapp_ThreadPipeRead(void* ctx){
 			thermapp->is_NewFrame = FALSE;
 			pthread_mutex_lock(&thermapp->mutex_thermapp);
         		for(actual_length = 0; actual_length < (PACKET_SIZE);){
-                		len = read(thermapp->fd_pipe_rd, (void*)(thermapp->therm_packet) + actual_length, (PACKET_SIZE) - actual_length);
-				if ( len <= 0 ) {
-					fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
-					perror("fifo pipe read");
-					pthread_mutex_unlock(&thermapp->mutex_thermapp);
-					break;
-				}
-        		actual_length += len;
-        		//fprintf(stderr,"len: %d, actual_length: %d\n",len, actual_length);
-			}
+                    len = read(thermapp->fd_pipe_rd, (void*)(thermapp->therm_packet) + actual_length, (PACKET_SIZE) - actual_length);
+                    if ( len <= 0 ) {
+                        fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
+                        perror("fifo pipe read");
+                        pthread_mutex_unlock(&thermapp->mutex_thermapp);
+                        break;
+                    }
+                    actual_length += len;
+                    //fprintf(stderr,"len: %d, actual_length: %d\n",len, actual_length);
+                }
 
         		// fprintf(stderr,"len: %d, actual_length: %d\n",len, actual_length);
 			//fprintf(stderr,"FRAME------------->");
 			if (read(thermapp->fd_pipe_rd, &FrameHeaderStop, sizeof(FrameHeaderStop)) <= 0 ) {
-                		fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
-                		perror("fifo pipe read");
-                		pthread_mutex_unlock(&thermapp->mutex_thermapp);
-                		break;
+                fprintf(stderr, "read thermapp_ThreadPipeRead()\n");
+                perror("fifo pipe read");
+                pthread_mutex_unlock(&thermapp->mutex_thermapp);
+                break;
 			}
 
 			//Catch Stop preamble FRAME_STOP_HEADER
 			// On FRAME_STOP_HEADER we can check the damaged packet
 			if(FrameHeaderStop == FRAME_STOP_HEADER){
-               			// fprintf(stderr,"FRAME_OK\n");
+                // fprintf(stderr,"FRAME_OK\n");
 				thermapp->is_NewFrame = TRUE;
-                		//pthread_cond_signal(&thermapp->cond_getimage);
-                		pthread_cond_wait(&thermapp->cond_pipe, &thermapp->mutex_thermapp);
+                //pthread_cond_signal(&thermapp->cond_getimage);
+                pthread_cond_wait(&thermapp->cond_pipe, &thermapp->mutex_thermapp);
 			}else{
-                		fprintf(stderr,"lost frame\n");
-                		thermapp->lost_packet++; //increment damaged frames counter
+                fprintf(stderr,"lost frame\n");
+                thermapp->lost_packet++; //increment damaged frames counter
 			}
 
 			current_status = thermapp->async_status;
@@ -416,7 +416,7 @@ int thermapp_getId(ThermApp *thermapp){
 	return thermapp->id;
 }
 
-//We don't know offset and quant value for temperature.
+//We don't know offset value for temperature.
 //We use experimental value.
 float thermapp_getTemperature(ThermApp *thermapp){
 	short t = thermapp->temperature;
@@ -643,11 +643,11 @@ int thermapp_read_async(ThermApp *thermapp, thermapp_read_async_cb_t cb, void *c
 		libusb_fill_bulk_transfer(thermapp->xfer[i],
                 thermapp->dev,
 				LIBUSB_ENDPOINT_IN | 1,
-					  thermapp->xfer_buf[i],
-                      DEFAULT_BUF_LENGTH,
-					  _libusb_callback,
-					  (void *)thermapp,
-					  BULK_TIMEOUT);
+                thermapp->xfer_buf[i],
+                DEFAULT_BUF_LENGTH,
+                _libusb_callback,
+                (void *)thermapp,
+                BULK_TIMEOUT);
 
 		r = libusb_submit_transfer(thermapp->xfer[i]);
 		if (r < 0) {
